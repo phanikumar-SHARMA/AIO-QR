@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIO-QR | Gamer's</title>
+<!-- Link to the favicon (logo.png) -->
+  <link rel="icon" href="./logo.png" type="image/png">
+
+  <!-- Optionally, add different sizes for compatibility -->
+  <link rel="icon" href="./logo.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="./logo.png" type="image/png" sizes="16x16">
+
+  <!-- Google Fonts and Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round|Material+Icons" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+  <style>
+    body {
+      background-color: #000;
+      color: #FFA500;
+      font-family: monospace;
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    h1 {
+      color: #FFA500;
+      margin-bottom: 30px;
+      animation: fadeIn 2s ease-in-out;
+    }
+
+    .skeleton-input {
+      font-family: monospace;
+      background-color: #000;
+      color: #FFA500;
+      border: 2px solid #FFA500;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+
+    .skeleton-input:focus {
+      border-color: #FF6600;
+    }
+
+    .btn-orange {
+      background-color: #FFA500;
+      color: #000;
+      border: 2px solid #FFA500;
+      padding: 12px 24px;
+      font-size: 18px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: 0.3s;
+      height:auto;
+      font-family: monospace;
+    }
+
+    .btn-orange:hover {
+      background-color: #000;
+      color: #FFA500;
+      border: 2px solid #FFA500;
+    }
+
+    .rounded-image {
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+    }
+
+    #qrcode {
+      margin-top: 20px;
+      border: 3px solid #FFA500;
+      padding: 10px;
+      display: inline-block;
+      transition: transform 0.3s ease-in-out;
+    }
+
+    #qrcode:hover {
+      transform: scale(1.05);
+    }
+
+    #download-btn {
+      margin-top: 20px;
+      display: none;
+      animation: fadeIn 2s ease-in-out;
+      height:auto;
+    }
+
+    .material-icons {
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+
+    /* Animation for fade-in effects */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .form-container {
+      width: 50%;
+      margin: auto;
+      background-color: #222;
+      padding: 30px;
+      border-radius: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .file-upload {
+      color: #FFA500;
+      cursor: pointer;
+    }
+
+    .file-upload input {
+      display: none;
+    }
+
+  </style>
+</head>
+<body>
+
+  <h1>QR for gamer's</h1>
+<div style = "width:100%;justify-content:center;display:flex;">
+<h4 align = "center">ALL-IN-ONE QR GENERATOR</h4>
+</div>
+  <div class="form-container">
+    <!-- Form Section -->
+    <div class="row">
+      <div class="col">
+        <div class="form-group">
+          <select id="game-selection" class="skeleton-input">
+            <option value="FreeFire">FreeFire</option>
+            <option value="BGMI">BGMI</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="game-id" class="skeleton-input" placeholder="Enter Game ID">
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="account-name" class="skeleton-input" placeholder="Enter Account Name">
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="your-name" class="skeleton-input" placeholder="Enter Your Name">
+        </div>
+
+        <!-- File Upload -->
+        <div class="form-group file-upload">
+          <label for="profile-upload">
+            <span class="material-icons">cloud_upload</span> Upload Profile Picture:
+          </label>
+          <input type="file" id="profile-upload" class="skeleton-input">
+        </div>
+
+        <!-- Generate QR Button -->
+        <button onclick="generateQRCode()" class="btn-orange">
+          <span class="material-icons">qr_code</span> Generate QR Code
+        </button>
+
+        <!-- QR Code Display -->
+        <div id="qrcode"></div>
+
+        <!-- Download Button -->
+        <button id="download-btn" class="btn-orange" onclick="downloadQR()">
+          <span class="material-icons">download</span> Download QR Code
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function generateQRCode() {
+      // Get user inputs
+      const game = document.getElementById("game-selection").value;
+      const gameId = document.getElementById("game-id").value.trim();
+      const accountName = document.getElementById("account-name").value.trim();
+      const yourName = document.getElementById("your-name").value.trim();
+      const profileUpload = document.getElementById("profile-upload").files[0];
+
+      // Validate inputs
+      if (!gameId || !accountName || !yourName) {
+        alert("Please fill in all fields!");
+        return;
+      }
+
+      // Format the QR content
+        const qrContent = `
+\t\t\t\t\t\t\t${game} Player Details
+------------------------------------------------\n
+Game ID: ${gameId}\n
+Account Name: ${accountName}\n
+Your Name: ${yourName}\n
+      `;
+
+      // Read the profile picture if uploaded
+      let profileImage = null;
+      if (profileUpload) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          profileImage = e.target.result; // Save the base64 image data
+          generateStyledQR(qrContent, profileImage); // Generate QR with profile image
+        };
+        reader.readAsDataURL(profileUpload);
+      } else {
+        generateStyledQR(qrContent); // Generate QR without profile image
+      }
+    }
+
+    function generateStyledQR(data, profileImage = null) {
+      // Clear previous QR code
+      const qrCodeContainer = document.getElementById("qrcode");
+      qrCodeContainer.innerHTML = ""; // Clear any existing QR code
+
+      // QR Code styling options
+      const qrOptions = {
+        width: 300,
+        height: 300,
+        color: {
+          dark: "#FFA500", // Orange
+          light: "#000",   // Black
+        },
+        dotsOptions: {
+          color: "#FFA500", // Orange
+          type: "rounded",  // Rounded dot shape
+        },
+        backgroundOptions: {
+          color: "#000",    // Black background
+        },
+        cornersSquareOptions: {
+          color: "#FFA500", // Orange corners
+          type: "rounded",  // Rounded corners
+        },
+        cornersDotOptions: {
+          color: "#FFA500", // Orange corner dots
+          type: "dot",      // Dot shape for corners
+        }
+      };
+
+      // Generate QR Code with the specified options
+      QRCode.toCanvas(document.createElement("canvas"), data, qrOptions, function (error, canvas) {
+        if (error) {
+          console.error("QR Code Error: ", error);
+          return;
+        }
+
+        // If a profile picture is provided, draw it as a round image in the center of the QR code
+        if (profileImage) {
+          const ctx = canvas.getContext("2d");
+          const img = new Image();
+          img.onload = function () {
+            const size = 60; // Size of the profile image in the center
+            const x = (canvas.width - size) / 2; // X position to center the image
+            const y = (canvas.height - size) / 2; // Y position to center the image
+            ctx.beginPath();
+            ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2, false); // Round shape
+            ctx.clip(); // Clip the image to the round shape
+            ctx.drawImage(img, x, y, size, size); // Draw the image on the QR code
+            qrCodeContainer.appendChild(canvas); // Append the canvas with the image
+            document.getElementById("download-btn").style.display = "inline-block"; // Show the download button
+          };
+          img.src = profileImage;
+        } else {
+          qrCodeContainer.appendChild(canvas); // Append the canvas without image
+          document.getElementById("download-btn").style.display = "inline-block"; // Show the download button
+        }
+      });
+    }
+
+    function downloadQR() {
+      const canvas = document.querySelector("#qrcode canvas");
+      if (canvas) {
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = "game-qr-code.png";
+        link.click();
+      }
+    }
+  </script>
+
+</body>
+</html>
