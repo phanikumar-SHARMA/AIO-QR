@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Generator</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+
+  <!-- Google Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.min.js"></script>
+
+  <style>
+    body {
+      background-color:black;
+      color:red;
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .label {
+      color:red;
+    }
+    label i {
+      color:red;
+    }
+    .container {
+      padding: 20px;
+      background-color:black;
+      color :red;
+    }
+    input{
+      background-color: black;
+      color:red;
+    }
+    h1 {
+      color:red;
+      margin-bottom: 20px;
+    }
+    #qrPreview {
+      margin: auto;
+      background:black;
+      width:auto;
+      height:auto;
+      JUSTIFY-CONTENT:CENTER;
+      display:flex;
+    }
+    button {
+      margin: 10px;
+      background-color:red;
+      color:black;
+    }
+    button:hover {
+      background-color:black;
+      color:red;
+    }
+    .form-control {
+      margin-bottom: 15px;
+    }
+    .history {
+      margin-top: 20px;
+     
+      padding-top: 15px;
+    }
+    form {
+      padding:20px;
+    }
+  </style>
+</head>
+<body ng-app="qrApp" ng-controller="QrController">
+
+  <div class="container">
+    <h1 class="has-text-centered">AIO-QR self customization</h1>
+
+    <!-- Input Section -->
+    <form>
+      <div class="field">
+        <label class="label"><i class="material-icons">code</i> QR Code Type</label>
+        <div class="control">
+          <select ng-model="qrData.type" class="form-control">
+            <option value="url">URL</option>
+            <option value="text">Text</option>
+            <option value="wifi">WiFi</option>
+            <option value="vcard">Contact Info</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label"><i class="material-icons">edit</i> Content</label>
+        <div class="control">
+          <input type="text" ng-model="qrData.content" placeholder="Enter your content" class="form-control">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label"><i class="material-icons">palette</i> Dots Color</label>
+        <div class="control">
+          <input type="color" ng-model="qrOptions.dotsColor" value="#000000" class="form-control">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label"><i class="material-icons">format_paint</i> Background Color</label>
+        <div class="control">
+          <input type="color" ng-model="qrOptions.bgColor" value="#ffffff" class="form-control">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label"><i class="material-icons">straighten</i> QR Code Size</label>
+        <div class="control">
+          <input type="number" ng-model="qrOptions.size" min="100" max="1000" value="300" class="form-control">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label"><i class="material-icons">shapes</i> Dots Style</label>
+        <div class="control">
+          <select ng-model="qrOptions.dotsType" class="form-control">
+            <option value="square">Square</option>
+            <option value="rounded">Rounded</option>
+            <option value="dots">Dots</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label"><i class="material-icons">insert_photo</i> Logo URL</label>
+        <div class="control">
+          <input type="url" ng-model="qrOptions.logoUrl" placeholder="Enter logo URL" class="form-control">
+        </div>
+      </div>
+    </form>
+
+    <!-- Buttons -->
+    <button class="button is-primary" ng-click="generateQRCode()"><i class="material-icons">qr_code</i> Generate QR Code</button>
+    <button class="button is-link" ng-click="downloadQRCode('png')"><i class="material-icons">file_download</i> Download as PNG</button>
+    <button class="button is-info" ng-click="downloadQRCode('jpeg')"><i class="material-icons">image</i> Download as JPEG</button>
+    <button class="button is-danger" ng-click="downloadQRCode('svg')"><i class="material-icons">download</i> Download as SVG</button>
+  </div>
+
+  <!-- QR Preview -->
+  <div id="qrPreview"></div>
+
+  <!-- History Section -->
+  <div class="history">
+    <h3 class="has-text-centered">QR Code History</h3>
+    <div ng-repeat="item in qrHistory" class="history-item">
+      <span>{{ item.content }}</span>
+      <button class="button is-small is-link" ng-click="loadFromHistory(item)">Load</button>
+    </div>
+  </div>
+
+  <script>
+    angular.module('qrApp', [])
+      .controller('QrController', ['$scope', function ($scope) {
+        let qrCodeStyling;
+
+        $scope.qrData = { type: 'url', content: '' };
+
+        $scope.qrOptions = {
+          dotsColor: '#000000',
+          bgColor: '#ffffff',
+          size: 300,
+          dotsType: 'square',
+          logoUrl: ''
+        };
+
+        $scope.qrHistory = [];
+
+        $scope.generateQRCode = function () {
+          if (!$scope.qrData.content) {
+            alert("Please enter content for the QR code!");
+            return;
+          }
+
+          $scope.saveToHistory();
+
+          const previewDiv = document.getElementById('qrPreview');
+          previewDiv.innerHTML = "";
+
+          qrCodeStyling = new QRCodeStyling({
+            width: $scope.qrOptions.size,
+            height: $scope.qrOptions.size,
+            data: $scope.qrData.content,
+            dotsOptions: {
+              color: $scope.qrOptions.dotsColor,
+              type: $scope.qrOptions.dotsType
+            },
+            backgroundOptions: {
+              color: $scope.qrOptions.bgColor
+            },
+            imageOptions: {
+              crossOrigin: "anonymous",
+              margin: 10
+            },
+            image: $scope.qrOptions.logoUrl || null
+          });
+
+          qrCodeStyling.append(previewDiv);
+        };
+
+        $scope.downloadQRCode = function (format) {
+          if (qrCodeStyling) {
+            qrCodeStyling.download(format || "png");
+          } else {
+            alert("Generate a QR code first!");
+          }
+        };
+
+        $scope.saveToHistory = function () {
+          if ($scope.qrHistory.some(item => item.content === $scope.qrData.content)) return;
+
+          $scope.qrHistory.push({
+            content: $scope.qrData.content,
+            options: angular.copy($scope.qrOptions)
+          });
+        };
+
+        $scope.loadFromHistory = function (item) {
+          $scope.qrData.content = item.content;
+          $scope.qrOptions = angular.copy(item.options);
+          $scope.generateQRCode();
+        };
+      }]);
+  </script>
+
+</body>
+</html>
